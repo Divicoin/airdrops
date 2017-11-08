@@ -1,0 +1,33 @@
+{
+  "name": "airdrops",
+  "version": "1.0.0",
+  "description": "divi airdrops",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Divicoin/airdrops.git"
+  },
+  "keywords": [
+    "airdrops",
+    "cryptocurrency"
+  ],
+  "author": "99darwin, beasta",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Divicoin/airdrops/issues"
+  },
+  "homepage": "https://github.com/Divicoin/airdrops#readme",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "axios": "^0.17.0",
+    "lodash": "^4.17.4",
+    "path": "^0.12.7",
+    "qs": "^6.5.1",
+    "querystring": "^0.2.0",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2"
+  }
+}

@@ -1,0 +1,2 @@
+# airdrops
+Divi airdrop codebase
