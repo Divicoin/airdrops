@@ -1,33 +1,89 @@
 var _ = require("lodash");
 var request = require("request-promise");
 var fs = require('fs');
-const etherscanToken = require('./keys.js');
+
+// keys
+const keys = require('./keys.js');
+const privateKey = new Buffer(keys.privateKey, 'hex');
+
+// Web3 Js
+var Tx = require('ethereumjs-tx');
+var Web3 = require('Web3');
+if (typeof web3 !== 'undefined') {
+    web3 = new Web3(web3.currentProvider)
+} else {
+    // eth network to send on (currently ropsten testnet)
+    web3 = new Web3(new Web3.providers.HttpProvider(`https://ropsten.infura.io/${keys.infuraKey}`))
+};
+const defaultAccount = web3.eth.defaultAccount = '0x4B830B03753c636A45c489a78Fa853e9EF659ECD';
+const count = web3.eth.getTransactionCount('0x4B830B03753c636A45c489a78Fa853e9EF659ECD');
+const abiArray = JSON.parse(fs.readFileSync('divx.json', 'utf-8'));
 const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
+const contract = web3.eth.contract(abiArray).at(contractAddress);
+
+// Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
 const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
 const intervalTime = 1; // milliseconds to test
 let targetTime = 10080; // minutes per week
 
+// Find balance of funding account (testnet account for now)
+var balance = web3.eth.getBalance('0x4B830B03753c636A45c489a78Fa853e9EF659ECD');
+console.log(balance);
+
+const sendEth = () => {
+    // create transaction parameters
+    const rawTx = {
+        // nonce = transaction id (compare to SQL auto_increment id)
+        nonce: count,
+        // where the funds will go (currently a test address)
+        to: '0xb6b0Eb43445Fbf7dB95b25940de6Fa2dAf4D8d90',
+        // value of tx
+        value: web3.toHex(1),
+        // gas price
+        gasPrice: web3.toHex(20000000000),
+        // gas limit
+        gasLimit: web3.toHex(100000),
+        // optional data - later will be used for function call from contract to transfer DIVX
+        data: '0xc0de'
+    }
+
+    // define the tx with rawTx object
+    const tx = new Tx(rawTx);
+    // sign the tx with funding account private key
+    tx.sign(privateKey);
+    // serialize tx (built in web3 function)
+    const serializedTx = tx.serialize();
+    // send the transaction, concatenate 0x, check for errors, get the tx hash
+    web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function(err, hash) {
+        if (!err) {
+            console.log('TX Hash: ' + hash)
+        } else {
+            console.log(err);
+        }
+    });
+}
+
 // randomly generate airdrop time
 const airDropCall = () => {
     const randomTime = _.round(Math.random() * targetTime + 1);
     targetTime--;
     if (randomTime === 1) {
-        getEtherPrice(thisAirdropTotal);
+        // getEtherPrice(thisAirdropTotal);
         clearInterval(refreshInterval);
+        sendEth();
     }
 };
 // function to stop and refresh interval
 const refreshInterval = setInterval(airDropCall, intervalTime);
-
 
 const getEtherPrice = function (airDropTotal) {
   // api call for finding contract transactions (contributions)
   const normalTransactions = {
     uri: etherscanApiUrl,
     qs: {
-      apikey: etherscanToken,
+      apikey: keys,
       module: 'account',
       action: 'txlist',
       startblock: 0,
@@ -81,10 +137,23 @@ const getEtherPrice = function (airDropTotal) {
         filtInTx['airDrop'] = (airDropTotal * filtInTx.purchased) / sumQualified;
         return filtInTx;
       })
-      console.log(txArr);
+      
+    //   contract.transfer('0x436b7690911e833c2EE902a20E8EB8d36D933Dc8', 100);
+    //   for (let i = 0; i < txArr.length; i++) {
+    //     contract.transfer(txArr[i].from, thisAirdropTotal, function(err, res) {
+    //         if (!err) {
+    //             console.log(res)
+    //         } else {
+    //             console.log(err);
+    //         }
+    //     });
+    // }
+    //   console.log(txArr);
     }
   )
   .catch(err => {console.log(`error:${err}`)})
 }
+
+
 
 
