@@ -1,3 +1,4 @@
 module.exports = {
-    "etherscanKey": "XXX"
+    "etherscanKey": "XXX",
+    "privateKey": "0x00"
 };
