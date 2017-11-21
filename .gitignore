@@ -58,4 +58,5 @@ typings/
 .env
 
 keys.js
-divx.json
+divx.js
+bundle.js

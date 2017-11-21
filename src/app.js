@@ -5,17 +5,21 @@ var fs = require('fs');
 // Web3 Js
 var Tx = require('ethereumjs-tx');
 var Web3 = require('Web3');
+var TestRPC = require("ethereumjs-testrpc");
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider)
 } else {
     // eth network to send on (currently ropsten testnet)
-    web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/ZiPr5aAvDUswywSYvRaK'))
+    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
 };
-const defaultAccount = web3.eth.defaultAccount = '0x4B830B03753c636A45c489a78Fa853e9EF659ECD';
-const count = web3.eth.getTransactionCount('0x4B830B03753c636A45c489a78Fa853e9EF659ECD');
-const abiArray = JSON.parse(fs.readFileSync('divx.json', 'utf-8'));
-const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
+const defaultAccount = web3.eth.defaultAccount = '0x038e800e61fa6100d43eb030c689a606d95d92dc';
+
+let count = web3.eth.getTransactionCount(defaultAccount);
+const abiArray = require('./divx.js')
+// const contractAddress = '0x82c903ebe31c3e74DA3518CA95AB94d66Acc97A0'; // rinkeby test contract
+const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
+const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
 
 // keys
 const keys = require('./keys.js');
@@ -24,66 +28,33 @@ const privateKey = new Buffer(keys.privateKey, 'hex');
 // Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
-const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
 const intervalTime = 1; // milliseconds to test
-let targetTime = 10080; // minutes per week
-
-// Find balance of funding account (testnet account for now)
-var balance = web3.eth.getBalance('0x4B830B03753c636A45c489a78Fa853e9EF659ECD');
-console.log(balance);
-
-const sendEth = () => {
-    // create transaction parameters
-    const rawTx = {
-        // nonce = transaction id (compare to SQL auto_increment id)
-        nonce: count,
-        // where the funds will go (currently a test address)
-        to: '0xb6b0Eb43445Fbf7dB95b25940de6Fa2dAf4D8d90',
-        // value of tx
-        value: web3.toHex(1),
-        // gas price
-        gasPrice: web3.toHex(20000000000),
-        // gas limit
-        gasLimit: web3.toHex(100000),
-        // optional data - later will be used for function call from contract to transfer DIVX
-        data: '0xc0de'
-    }
-
-    // define the tx with rawTx object
-    const tx = new Tx(rawTx);
-    // sign the tx with funding account private key
-    tx.sign(privateKey);
-    // serialize tx (built in web3 function)
-    const serializedTx = tx.serialize();
-    // send the transaction, concatenate 0x, check for errors, get the tx hash
-    web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function(err, hash) {
-        if (!err) {
-            console.log('TX Hash: ' + hash)
-        } else {
-            console.log(err);
-        }
-    });
-}
+let targetTime = 1; // minutes per week
 
 // randomly generate airdrop time
 const airDropCall = () => {
     const randomTime = _.round(Math.random() * targetTime + 1);
     targetTime--;
     if (randomTime === 1) {
-        // getEtherPrice(thisAirdropTotal);
+        console.log('AIRDROP TIME');
+        getEtherPrice(thisAirdropTotal);
         clearInterval(refreshInterval);
-        sendEth();
+        // sendEth();
+    } else {
+        // console.log(randomTime);
     }
 };
 // function to stop and refresh interval
 const refreshInterval = setInterval(airDropCall, intervalTime);
 
-const getEtherPrice = function (airDropTotal) {
+const getEtherPrice = (airDropTotal) =>  {
   // api call for finding contract transactions (contributions)
+
   const normalTransactions = {
-    uri: etherscanApiUrl,
+    url: etherscanApiUrl,
+    method: 'GET',
     qs: {
-      apikey: keys,
+      apikey: keys.etherscanKey,
       module: 'account',
       action: 'txlist',
       startblock: 0,
@@ -95,7 +66,6 @@ const getEtherPrice = function (airDropTotal) {
       'User-Agent': 'Request-Promise'
     }
   }
-
   Promise.all(
       [
        request(normalTransactions)
@@ -116,7 +86,7 @@ const getEtherPrice = function (airDropTotal) {
         }
       }
       // filter transaction array to find incoming transactions only
-      const inTransactions = _.filter(normalTransactions, {'to': contractAddress});
+      const inTransactions = _.filter(normalTransactions, {input: '0xb4427263'});
       // loop through transactions to find bonus multiplier based on contribution amount
       let txArr = _.map(inTransactions, function(inTransaction) {
         const bonusMultiplier = bonusFind(inTransaction.blockNumber) / 100 + 1;
@@ -136,21 +106,42 @@ const getEtherPrice = function (airDropTotal) {
       txArr = totalQualified.map(filtInTx => {
         filtInTx['airDrop'] = (airDropTotal * filtInTx.purchased) / sumQualified;
         return filtInTx;
-      })
-      
-    //   contract.transfer('0x436b7690911e833c2EE902a20E8EB8d36D933Dc8', 100);
-    //   for (let i = 0; i < txArr.length; i++) {
-    //     contract.transfer(txArr[i].from, thisAirdropTotal, function(err, res) {
-    //         if (!err) {
-    //             console.log(res)
-    //         } else {
-    //             console.log(err);
-    //         }
-    //     });
-    // }
-    //   console.log(txArr);
+      });
+      console.log(_.sumBy(txArr, 'airDrop'));
+      for (let i = 0; i < txArr.length; i++) {
+          airDropAmt = txArr[i].airDrop;
+          toAddress = txArr[i].from;
+    
+        // create transaction parameters
+        const contractTx = {
+            // nonce = transaction id (compare to SQL auto_increment id)
+            nonce: count,
+            // where the funds will go (currently a test address)
+            to: contractAddress,
+            // value of tx
+            value: web3.toHex(0),
+            // gas price
+            gasPrice: web3.toHex(20000000000),
+            // gas limit
+            gasLimit: web3.toHex(100000),
+            // optional data - later will be used for function call from contract to transfer DIVX
+            data: contract.transfer.getData(toAddress, airDropAmt)
+        }
+        count++;
+        console.log(count);
+        const tx = new Tx(contractTx);
+        tx.sign(privateKey);
+        const serializedTx = tx.serialize();
+    
+        web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function(err, hash) {
+            if(!err) {
+                console.log('Successful tx, here\'s the hash ' + hash);
+            } else {
+                console.log(err);
+            }
+        })
     }
-  )
+    })
   .catch(err => {console.log(`error:${err}`)})
 }
 
