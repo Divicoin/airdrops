@@ -12,8 +12,8 @@ if (typeof web3 !== 'undefined') {
     // eth network to send on (currently ropsten testnet)
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
 };
-const defaultAccount = web3.eth.defaultAccount = '0x038e800e61fa6100d43eb030c689a606d95d92dc';
-
+const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
+console.log(defaultAccount);
 let count = web3.eth.getTransactionCount(defaultAccount);
 const abiArray = require('./divx.js')
 // const contractAddress = '0x82c903ebe31c3e74DA3518CA95AB94d66Acc97A0'; // rinkeby test contract
@@ -24,7 +24,6 @@ const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distrib
 // keys
 const keys = require('./keys.js');
 const privateKey = new Buffer(keys.privateKey, 'hex');
-
 // Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
@@ -39,7 +38,6 @@ const airDropCall = () => {
         console.log('AIRDROP TIME');
         getEtherPrice(thisAirdropTotal);
         clearInterval(refreshInterval);
-        // sendEth();
     } else {
         // console.log(randomTime);
     }
@@ -108,7 +106,9 @@ const getEtherPrice = (airDropTotal) =>  {
         return filtInTx;
       });
       console.log(_.sumBy(txArr, 'airDrop'));
-      for (let i = 0; i < txArr.length; i++) {
+      console.log(txArr.length);
+      let i = 0;
+        const drop = () => {
           airDropAmt = txArr[i].airDrop;
           toAddress = txArr[i].from;
     
@@ -128,7 +128,6 @@ const getEtherPrice = (airDropTotal) =>  {
             data: contract.transfer.getData(toAddress, airDropAmt)
         }
         count++;
-        console.log(count);
         const tx = new Tx(contractTx);
         tx.sign(privateKey);
         const serializedTx = tx.serialize();
@@ -136,11 +135,16 @@ const getEtherPrice = (airDropTotal) =>  {
         web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function(err, hash) {
             if(!err) {
                 console.log('Successful tx, here\'s the hash ' + hash);
+                if (i < txArr.length - 1) {
+                    i++;
+                    drop();
+                }
             } else {
                 console.log(err);
             }
         })
     }
+    drop();
     })
   .catch(err => {console.log(`error:${err}`)})
 }
