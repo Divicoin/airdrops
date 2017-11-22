@@ -5,7 +5,7 @@ var fs = require('fs');
 // Web3 Js
 var Tx = require('ethereumjs-tx');
 var Web3 = require('Web3');
-var TestRPC = require("ethereumjs-testrpc");
+// var TestRPC = require("ethereumjs-testrpc");
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider)
 } else {
@@ -19,7 +19,7 @@ const abiArray = require('./divx.js')
 // const contractAddress = '0x82c903ebe31c3e74DA3518CA95AB94d66Acc97A0'; // rinkeby test contract
 const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
-const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
+
 
 // keys
 const keys = require('./keys.js');
@@ -27,6 +27,8 @@ const privateKey = new Buffer(keys.privateKey, 'hex');
 // Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
+const thisAirdropTotal = 100000000000000000000 / ethereumDivider; // amount of tokens allocated for airdrop distribution
+let gasLimit = 200000;
 const intervalTime = 1; // milliseconds to test
 let targetTime = 1; // minutes per week
 
@@ -109,7 +111,7 @@ const getEtherPrice = (airDropTotal) =>  {
       console.log(txArr.length);
       let i = 0;
         const drop = () => {
-          airDropAmt = txArr[i].airDrop;
+          airDropAmt = txArr[i].airDrop * ethereumDivider;
           toAddress = txArr[i].from;
     
         // create transaction parameters
@@ -123,10 +125,11 @@ const getEtherPrice = (airDropTotal) =>  {
             // gas price
             gasPrice: web3.toHex(20000000000),
             // gas limit
-            gasLimit: web3.toHex(100000),
+            gasLimit: web3.toHex(gasLimit),
             // optional data - later will be used for function call from contract to transfer DIVX
             data: contract.transfer.getData(toAddress, airDropAmt)
         }
+        console.log(contractTx.data);
         count++;
         const tx = new Tx(contractTx);
         tx.sign(privateKey);
