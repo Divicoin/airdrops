@@ -20,14 +20,13 @@ const abiArray = require('./divx.js')
 const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
 
-
 // keys
 const keys = require('./keys.js');
 const privateKey = new Buffer(keys.privateKey, 'hex');
 // Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
-const thisAirdropTotal = 100000000000000000000 / ethereumDivider; // amount of tokens allocated for airdrop distribution
+const thisAirdropTotal = 1000000000000000000000 / ethereumDivider; // amount of tokens allocated for airdrop distribution
 let gasLimit = 200000;
 const intervalTime = 1; // milliseconds to test
 let targetTime = 1; // minutes per week
@@ -38,10 +37,12 @@ const airDropCall = () => {
     targetTime--;
     if (randomTime === 1) {
         console.log('AIRDROP TIME');
-        getEtherPrice(thisAirdropTotal);
+        setInterval(function() {
+            getEtherPrice(thisAirdropTotal);
+        }, 20000);
         clearInterval(refreshInterval);
     } else {
-        // console.log(randomTime);
+        console.log(randomTime);
     }
 };
 // function to stop and refresh interval
@@ -49,7 +50,6 @@ const refreshInterval = setInterval(airDropCall, intervalTime);
 
 const getEtherPrice = (airDropTotal) =>  {
   // api call for finding contract transactions (contributions)
-
   const normalTransactions = {
     url: etherscanApiUrl,
     method: 'GET',
