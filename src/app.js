@@ -14,9 +14,8 @@ if (typeof web3 !== 'undefined') {
 };
 const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
 console.log(defaultAccount);
-let count = web3.eth.getTransactionCount(defaultAccount);
+// let count = web3.eth.getTransactionCount(defaultAccount);
 const abiArray = require('./divx.js')
-// const contractAddress = '0x82c903ebe31c3e74DA3518CA95AB94d66Acc97A0'; // rinkeby test contract
 const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
 const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
@@ -43,75 +42,29 @@ const airDropCall = () => {
     }
 };
 // function to stop and refresh interval
-const refreshInterval = setInterval(airDropCall, intervalTime);
+// const refreshInterval = setInterval(airDropCall, intervalTime);
 
-const getEtherPrice = (airDropTotal) =>  {
-  // api call for finding contract transactions (contributions)
+const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
+    let count = web3.eth.getTransactionCount(defaultAccount);
+    // filter only qualified transactions (over 1000 DIVX)
+    const totalQualified = _.filter(tokenAddressesAndQuantities, function (tokenAddressAndQuantity) {
+        return tokenAddressAndQuantity.balance >= 1000;
+    });
+    console.log(`Number of total qualified addresses: ${totalQualified.length}`);
+    // add together total supply of qualified transactions
+    const sumQualified = _.sumBy(totalQualified, 'balance');
+    console.log(`The qualified sum is equal to: ${sumQualified}`);
+    // figure out how much each address receives
+    tokenAddressesAndQuantities = totalQualified.map(tokenAddressAndQuantity => {
+        tokenAddressAndQuantity['airDrop'] = (airDropTotal * tokenAddressAndQuantity.balance) / sumQualified;
+        return tokenAddressAndQuantity;
+    });
+    console.log('Airdrop total is equivalent to the following numeric value: ' + _.sumBy(tokenAddressesAndQuantities, 'airDrop'));
+    let i = 0;
+    const drop = () => {
+        airDropAmt = tokenAddressesAndQuantities[i].airDrop;
+        toAddress = tokenAddressesAndQuantities[i].address;
 
-  const normalTransactions = {
-    url: etherscanApiUrl,
-    method: 'GET',
-    qs: {
-      apikey: keys.etherscanKey,
-      module: 'account',
-      action: 'txlist',
-      startblock: 0,
-      endblock: 999999999,
-      sort: 'asc',
-      address: contractAddress
-    },
-    headers: {
-      'User-Agent': 'Request-Promise'
-    }
-  }
-  Promise.all(
-      [
-       request(normalTransactions)
-      ]
-  )
-  .then( res => {
-      const normalTransactions = JSON.parse(res[0]).result;
-      // find bonus based on blocktime
-      const bonusFind = (blockNum) => {
-        if (blockNum < 4438800) {
-            return 100;
-        } else if (blockNum < 4496400 ) {
-            return 30;
-        } else if (blockNum < 4554000) {
-            return 15;
-        } else if (blockNum < 4611600) {
-            return 0;
-        }
-      }
-      // filter transaction array to find incoming transactions only
-      const inTransactions = _.filter(normalTransactions, {input: '0xb4427263'});
-      // loop through transactions to find bonus multiplier based on contribution amount
-      let txArr = _.map(inTransactions, function(inTransaction) {
-        const bonusMultiplier = bonusFind(inTransaction.blockNumber) / 100 + 1;
-        const purchased = bonusMultiplier * inTransaction.value / ethereumDivider * 500;
-            return {
-                from: inTransaction.from,
-                purchased
-            };
-      });
-      // filter only qualified transactions (over 1000 DIVX)
-      const totalQualified = _.filter(txArr, function(inTransaction) {
-          return inTransaction.purchased >= 1000;
-      });
-      // add together total supply of qualified transactions
-      const sumQualified = _.sumBy(totalQualified, 'purchased');
-      // figure out how much each address receives
-      txArr = totalQualified.map(filtInTx => {
-        filtInTx['airDrop'] = (airDropTotal * filtInTx.purchased) / sumQualified;
-        return filtInTx;
-      });
-      console.log(_.sumBy(txArr, 'airDrop'));
-      console.log(txArr.length);
-      let i = 0;
-        const drop = () => {
-          airDropAmt = txArr[i].airDrop;
-          toAddress = txArr[i].from;
-    
         // create transaction parameters
         const contractTx = {
             // nonce = transaction id (compare to SQL auto_increment id)
@@ -131,11 +84,11 @@ const getEtherPrice = (airDropTotal) =>  {
         const tx = new Tx(contractTx);
         tx.sign(privateKey);
         const serializedTx = tx.serialize();
-    
-        web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function(err, hash) {
-            if(!err) {
+
+        web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), function (err, hash) {
+            if (!err) {
                 console.log('Successful tx, here\'s the hash ' + hash);
-                if (i < txArr.length - 1) {
+                if (i < tokenAddressesAndQuantities.length - 1) {
                     i++;
                     drop();
                 }
@@ -145,10 +98,6 @@ const getEtherPrice = (airDropTotal) =>  {
         })
     }
     drop();
-    })
-  .catch(err => {console.log(`error:${err}`)})
 }
 
-
-
-
+module.exports = runAirDrop;

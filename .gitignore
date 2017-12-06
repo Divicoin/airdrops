@@ -60,3 +60,4 @@ typings/
 keys.js
 divx.js
 bundle.js
+.DS_Store

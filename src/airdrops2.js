@@ -3,22 +3,28 @@ const _ = require("lodash");
 const keys = require('./keys.js');
 const Web3 = require('Web3');
 const utils = require('web3-utils');
+const runAirDrop = require('./app.js');
 
 const etherscanApiUrl = 'https://api.etherscan.io/api'
-// const accountAddress ='0x458f79a8a71d02c333d0f097887f59285ff4a2c7' // address to get token balance from
 const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
-// const simpleContractAddress = accountAddress.substring(2);
-// const balanceOfTopic = ('0x70a08231000000000000000000000000' + simpleContractAddress);
 const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
-const excludedAddresses = [ // such as known exchange addresses and DIVI account
-  '0x2984581ece53a4390d1f568673cf693139c97049', //cryptopia?
+const excludedAddresses = [ 
+  // cryptopia
+  '0x2984581ece53a4390d1f568673cf693139c97049',
+  // treasury
+  '0x5bc79fbbce4e5d6c3de7bd1a252ef3f58a66b09c'
 ]
-// const erc20Abi = [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"type":"function"}];
+const airdropTotal = 2000;
+
 const erc20Abi = require('./divx.js');
 
-// let web3 = new Web3(new Web3.providers.HttpProvider(`https://ropsten.infura.io/${keys.infuraKey}`))
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+if (typeof web3 !== 'undefined') {
+  web3 = new Web3(web3.currentProvider)
+} else {
+  // eth network to send on (currently ropsten testnet)
+  web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
+};
 web3.utils = utils;
 
 const transferFilterOptions = {
@@ -110,6 +116,7 @@ const getBalances = (contractAddress, accountAddressesArray) => {
     } else {
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
+      runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
     if (result) {
