@@ -3,7 +3,8 @@ const _ = require("lodash");
 const keys = require('./keys.js');
 const Web3 = require('Web3');
 const utils = require('web3-utils');
-const runAirDrop = require('./app.js');
+// const runAirDrop = require('./app.js');
+const masternodeCalculator = require('./masternodeCalculator.js')
 
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
@@ -116,7 +117,8 @@ const getBalances = (contractAddress, accountAddressesArray) => {
     } else {
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
-      runAirDrop(airdropTotal, addressesAndBalancesArray);
+      // runAirDrop(airdropTotal, addressesAndBalancesArray);
+      masternodeCalculator(addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
     if (result) {
