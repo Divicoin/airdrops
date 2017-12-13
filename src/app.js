@@ -1,19 +1,23 @@
-var _ = require("lodash");
-var request = require("request-promise");
-var fs = require('fs');
+const _ = require("lodash");
+const request = require("request-promise");
+const fs = require('fs');
+const droppings = require('./drop.js');
+
+const readFromFile = process.argv[2] === 'true';
 
 // Web3 Js
-var Tx = require('ethereumjs-tx');
-var Web3 = require('Web3');
-var TestRPC = require("ethereumjs-testrpc");
+const Tx = require('ethereumjs-tx');
+const Web3 = require('Web3');
+// const TestRPC = require("ethereumjs-testrpc");
+const testRPC = process.argv[3] === 'true';
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider)
 } else {
     // eth network to send on (currently ropsten testnet)
-    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
+    web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
 };
 const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
-console.log(defaultAccount);
+console.log('defaultAccount',defaultAccount);
 // let count = web3.eth.getTransactionCount(defaultAccount);
 const abiArray = require('./divx.js')
 const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
@@ -45,7 +49,7 @@ const airDropCall = () => {
 // const refreshInterval = setInterval(airDropCall, intervalTime);
 
 const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
-    let count = web3.eth.getTransactionCount(defaultAccount);
+    // let count = web3.eth.getTransactionCount(defaultAccount);
     // filter only qualified transactions (over 1000 DIVX)
     const totalQualified = _.filter(tokenAddressesAndQuantities, function (tokenAddressAndQuantity) {
         return tokenAddressAndQuantity.balance >= 1000;
@@ -62,8 +66,8 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
     console.log('Airdrop total is equivalent to the following numeric value: ' + _.sumBy(tokenAddressesAndQuantities, 'airDrop'));
     let i = 0;
     const drop = () => {
-        airDropAmt = tokenAddressesAndQuantities[i].airDrop;
-        toAddress = tokenAddressesAndQuantities[i].address;
+        const airDropAmt = tokenAddressesAndQuantities[i].airDrop;
+        const toAddress = tokenAddressesAndQuantities[i].address;
 
         // create transaction parameters
         const contractTx = {
@@ -97,7 +101,30 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
             }
         })
     }
-    drop();
+
+  fs.writeFileSync('./tokenAddressesAndQuantities', JSON.stringify(tokenAddressesAndQuantities,null, 2));
+  //   const testArr = [  {
+  //     "address": "0x4b830b03753c636a45c489a78fa853e9ef659ecd",
+  //     "balance": 82454.83652599723,
+  //     "airDrop": 38.975190265679956
+  //   },
+  //     {
+  //       "address": "0xbbf934dd3b78a4d31278e3ace4f141cd60b88aa5",
+  //       "balance": 7600.818834730124,
+  //       "airDrop": 3.592795434930826
+  //     },
+  //     {
+  //       "address": "0x5b3e3cc385237564b102b4a7505876bfeb2752a2",
+  //       "balance": 100,
+  //       "airDrop": 32.62157053148836
+  //     }]
+  // const newarr = _.filter(tokenAddressesAndQuantities, (obj) => {
+  //   return obj.balance <= 1000;
+  // })
+  // console.log('newarr',newarr);
+  // console.log('testArr',testArr);
+    // drop();
+  droppings(tokenAddressesAndQuantities);
 }
 
 module.exports = runAirDrop;

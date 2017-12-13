@@ -4,6 +4,12 @@ const keys = require('./keys.js');
 const Web3 = require('Web3');
 const utils = require('web3-utils');
 const runAirDrop = require('./app.js');
+const fs = require('fs');
+
+const readFromFile = process.argv[2] === 'true';
+const testRpc = process.argv[3] === 'true';
+
+console.log('readFromFile',readFromFile);
 
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
@@ -23,7 +29,7 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider)
 } else {
   // eth network to send on (currently ropsten testnet)
-  web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
+  web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRpc ? 8546 : 8545}`))
 };
 web3.utils = utils;
 
@@ -50,6 +56,13 @@ const createTokenFilter= web3.eth.filter(createTokenFilterOptions)
 // gets all the erc20 token holders for any token balance
 transferFilter.get((err, transferLogs) => {
   if (!err) {
+    if (readFromFile) {
+      const addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
+      if (addressesAndBalancesArray) {
+        runAirDrop(airdropTotal, addressesAndBalancesArray);
+        return;
+      }
+    }
     console.log('transferLogs.length',transferLogs.length);
 
     const transferAddresses = [];
@@ -109,13 +122,14 @@ const getBalances = (contractAddress, accountAddressesArray) => {
   console.log('accountAddressesArray.length',accountAddressesArray.length);
   const filteredAccountAddressesArray = _.pull(accountAddressesArray, ...excludedAddresses);
   // const filteredAccountAddressesArray = accountAddressesArray; // use this to check that all tranasactions add up
-  console.log('filteredAccountAddressesArray.length',filteredAccountAddressesArray.length);
+  console.log('filteredAccountAddressesArray.length (excludedAddresses array removed)',filteredAccountAddressesArray.length);
   const recursiveCaller = (result) => {
     if (counter < filteredAccountAddressesArray.length - 1) {
       counter++;
     } else {
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
+      fs.writeFileSync('./addressesAndBalancesArray', JSON.stringify(addressesAndBalancesArray,null, 2));
       runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
