@@ -3,13 +3,13 @@ const request = require("request-promise");
 const fs = require('fs');
 const droppings = require('./drop.js');
 
-const readFromFile = process.argv[2] === 'true';
+const readFromFile = process.argv[2] === 'true'; // if false, it'll create the file and stop. if true, it'll run using the existing file
+const testRPC = process.argv[3] === 'true';
 
 // Web3 Js
 const Tx = require('ethereumjs-tx');
 const Web3 = require('Web3');
 // const TestRPC = require("ethereumjs-testrpc");
-const testRPC = process.argv[3] === 'true';
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider)
 } else {
@@ -124,7 +124,9 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
   // console.log('newarr',newarr);
   // console.log('testArr',testArr);
     // drop();
-  droppings(tokenAddressesAndQuantities);
+  if (readFromFile) {
+    droppings(tokenAddressesAndQuantities);
+  }
 }
 
 module.exports = runAirDrop;
