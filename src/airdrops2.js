@@ -52,12 +52,13 @@ const createTokenFilterOptions = {
 
 const transferFilter = web3.eth.filter(transferFilterOptions);
 const createTokenFilter= web3.eth.filter(createTokenFilterOptions)
+let addressesAndBalancesArray;
 
 // gets all the erc20 token holders for any token balance
 transferFilter.get((err, transferLogs) => {
   if (!err) {
     if (readFromFile) {
-      const addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
+      addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
       if (addressesAndBalancesArray) {
         runAirDrop(airdropTotal, addressesAndBalancesArray);
         return;
@@ -108,6 +109,10 @@ const getBalance = (contractAddress, accountAddress, callback) => {
   }, function (err, result) {
     if (result) {
       const tokens = web3.utils.toBN(result).toString();
+      addressesAndBalancesArray.push({
+        address: accountAddress,
+        balance: Number(web3.utils.fromWei(tokens, 'ether'))
+      });
       callback(web3.utils.fromWei(tokens, 'ether'));
     } else {
       console.log('err',err);
@@ -118,7 +123,7 @@ const getBalance = (contractAddress, accountAddress, callback) => {
 // gets the balance of all token holders ... answers the question of ... how to find all erc20 token holder balances using web3 and geth
 const getBalances = (contractAddress, accountAddressesArray) => {
   let counter = -1;
-  const addressesAndBalancesArray = [];
+  addressesAndBalancesArray = [];
   console.log('accountAddressesArray.length',accountAddressesArray.length);
   const filteredAccountAddressesArray = _.pull(accountAddressesArray, ...excludedAddresses);
   // const filteredAccountAddressesArray = accountAddressesArray; // use this to check that all tranasactions add up
@@ -133,16 +138,16 @@ const getBalances = (contractAddress, accountAddressesArray) => {
       runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
-    if (result) {
-      if (Number(result) > 0) {
-        addressesAndBalancesArray.push({
-          address: filteredAccountAddressesArray[counter],
-          balance: Number(result)
-        });
-      }
-    } else if (counter > 0) {
-      console.log("error: no result was returned");
-    }
+    // if (result) {
+    //   // if (Number(result) > 0) {
+    //   //   addressesAndBalancesArray.push({
+    //   //     address: filteredAccountAddressesArray[counter],
+    //   //     balance: Number(result)
+    //   //   });
+    //   // }
+    // } else if (counter > 0) {
+    //   console.log("error: no result was returned");
+    // }
     getBalance(contractAddress, filteredAccountAddressesArray[counter], recursiveCaller)
   }
   return recursiveCaller();
