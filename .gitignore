@@ -61,3 +61,8 @@ keys.js
 divx.js
 bundle.js
 .DS_Store
+keys.old.js
+tokenAddressesAndQuantities-saved*
+tokenAddressesAndQuantities-saved*
+addressesAndBalancesArray-saved*
+

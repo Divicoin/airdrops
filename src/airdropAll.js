@@ -1,41 +1,19 @@
 const request = require("request-promise")
 const _ = require("lodash");
 const keys = require('./keys.js');
-const Web3 = require('Web3');
+const Web3 = require('web3');
 const utils = require('web3-utils');
 
 const etherscanApiUrl = 'https://api.etherscan.io/api'
-// const accountAddress ='0x458f79a8a71d02c333d0f097887f59285ff4a2c7' // address to get token balance from
-const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
-// const simpleContractAddress = accountAddress.substring(2);
-// const balanceOfTopic = ('0x70a08231000000000000000000000000' + simpleContractAddress);
+const contractAddress = keys.contractAddress;
 const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
-const excludedAddresses = [ // such as known exchange addresses and DIVI account
-    '0x2984581ece53a4390d1f568673cf693139c97049',
-]
-// const erc20Abi = [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"type":"function"}];
+const excludedAddresses = keys.excludedAddresses;
 const erc20Abi = require('./divx.js');
 
-// let web3 = new Web3(new Web3.providers.HttpProvider(`https://ropsten.infura.io/${keys.infuraKey}`))
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 web3.utils = utils;
 
-
-// web3.eth.call({
-//   to: contractAddress,
-//   data: balanceOfTopic,
-// }, function (err, result) {
-//   if (result) {
-//     console.log('contractAddress',contractAddress);
-//     console.log('balanceOfTopic',balanceOfTopic);
-//     console.log('result',result);
-//     const tokens = web3.utils.toBN(result).toString();
-//     console.log('web3.utils.fromWei(tokens, ether);',web3.utils.fromWei(tokens, 'ether'));
-//   } else {
-//     console.log('err',err);
-//   }
-// })
 
 const getBalance = (contractAddress, accountAddress, callback) => {
   const simpleAccountAddress = accountAddress.substring(2);
@@ -46,11 +24,7 @@ const getBalance = (contractAddress, accountAddress, callback) => {
     data: balanceOfTopic,
   }, function (err, result) {
     if (result) {
-      // console.log('contractAddress',contractAddress);
-      // console.log('balanceOfTopic',balanceOfTopic);
-      // console.log('result',result);
       const tokens = web3.utils.toBN(result).toString();
-      // console.log('web3.utils.fromWei(tokens, ether);',web3.utils.fromWei(tokens, 'ether'));
       callback(web3.utils.fromWei(tokens, 'ether'));
     } else {
       console.log('err',err);
@@ -58,7 +32,6 @@ const getBalance = (contractAddress, accountAddress, callback) => {
   })
 }
 
-// getBalance(contractAddress, '0x458f79a8a71d02c333d0f097887f59285ff4a2c7', thing => console.log('thing', thing));
 
 const getBalances = (contractAddress, accountAddressesArray) => {
   let counter = -1;
@@ -69,7 +42,6 @@ const getBalances = (contractAddress, accountAddressesArray) => {
       counter++;
     } else {
       console.log('counter',counter);
-      // console.log(addressesAndBalancesArray);
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
       console.log('_.first(addressesAndBalancesArray)',_.first(addressesAndBalancesArray));
@@ -77,14 +49,10 @@ const getBalances = (contractAddress, accountAddressesArray) => {
     }
     if (result) {
       if (Number(result) > 0) {
-        // if (excludedAddresses.indexOf(accountAddressesArray[counter]) === -1) {
           addressesAndBalancesArray.push({
             address: filteredAccountAddressesArray[counter],
             balance: Number(result)
           });
-        // } else {
-        //   console.log('addressesAndBalancesArray[counter]',addressesAndBalancesArray[counter]);
-        // }
       }
     } else if (counter > 0) {
       console.log("error: no result was returned");
@@ -181,14 +149,12 @@ Promise.all(
           } else {
             console.log('topic0 is neither a transfer or a create topic');
           }
-          // return tokenAddress;
         })
         const uniqTokenAddresses = _.uniq(tokenAddresses)
         console.log('_.first(uniqTokenAddresses)', _.first(uniqTokenAddresses));
         console.log('_.last(uniqTokenAddresses)', _.last(uniqTokenAddresses));
         console.log('uniqTokenAddresses.length', uniqTokenAddresses.length);
         console.log('getBalances(contractAddress, uniqTokenAddresses)',getBalances(contractAddress, uniqTokenAddresses));
-        // getBalances(contractAddress, uniqTokenAddresses)
       }
     })
 

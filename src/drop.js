@@ -10,22 +10,20 @@
 //     "airDrop": 3.5923920805302036
 //   }
 // ]
-// const
-//     web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
 
-const Web3 = require('Web3');
+const Web3 = require('web3');
 const Tx = require('ethereumjs-tx');
 const testRPC = process.argv[3] === 'true';
 const web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
-const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
+const keys = require('./keys.js');
+const privateKey = new Buffer(keys.privateKey, 'hex');
+const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[keys.web3EthAccount];
 console.log('defaultAccount',defaultAccount);
 
 const abiArray = require('./divx.js')
-const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
+const contractAddress = keys.contractAddress; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
 
-const keys = require('./keys.js');
-const privateKey = new Buffer(keys.privateKey, 'hex');
 
 const droppings = (tokenAddressesAndQuantities) => {
   let nonceCount = web3.eth.getTransactionCount(defaultAccount);
@@ -44,9 +42,9 @@ const droppings = (tokenAddressesAndQuantities) => {
       // value of tx
       value: web3.toHex(0),
       // gas price
-      gasPrice: web3.toHex(21000000000),
+      gasPrice: web3.toHex(keys.gasPrice),
       // gas limit
-      gasLimit: web3.toHex(100000),
+      gasLimit: web3.toHex(keys.gasLimit),
       // optional data - later will be used for function call from contract to transfer DIVX
       data: contract.transfer.getData(toAddress, airDropAmt)
     }
@@ -62,6 +60,8 @@ const droppings = (tokenAddressesAndQuantities) => {
         if (i < tokenAddressesAndQuantities.length - 1) {
           i++;
           drop();
+        } else {
+            console.log("Airdrop is complete! dont forget ---> npm run backupLogs");
         }
       } else {
         console.log("there is an error");
