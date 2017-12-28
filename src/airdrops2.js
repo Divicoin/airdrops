@@ -1,7 +1,7 @@
 // const request = require("request-promise")
 const _ = require("lodash");
 const keys = require('./keys.js');
-const Web3 = require('Web3');
+const Web3 = require('web3');
 const utils = require('web3-utils');
 const runAirDrop = require('./app.js');
 const fs = require('fs');

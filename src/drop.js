@@ -13,7 +13,7 @@
 // const
 //     web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
 
-const Web3 = require('Web3');
+const Web3 = require('web3');
 const Tx = require('ethereumjs-tx');
 const testRPC = process.argv[3] === 'true';
 const web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))

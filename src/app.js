@@ -8,7 +8,7 @@ const testRPC = process.argv[3] === 'true';
 
 // Web3 Js
 const Tx = require('ethereumjs-tx');
-const Web3 = require('Web3');
+const Web3 = require('web3');
 // const TestRPC = require("ethereumjs-testrpc");
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider)
