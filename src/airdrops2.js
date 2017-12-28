@@ -21,7 +21,7 @@ const excludedAddresses = [
   // treasury
   '0x5bc79fbbce4e5d6c3de7bd1a252ef3f58a66b09c'
 ]
-const airdropTotal = 2000;
+const airdropTotal = 3000000000000000000000;
 
 const erc20Abi = require('./divx.js');
 

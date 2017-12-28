@@ -44,7 +44,7 @@ const droppings = (tokenAddressesAndQuantities) => {
       // value of tx
       value: web3.toHex(0),
       // gas price
-      gasPrice: web3.toHex(20000000000),
+      gasPrice: web3.toHex(21000000000),
       // gas limit
       gasLimit: web3.toHex(100000),
       // optional data - later will be used for function call from contract to transfer DIVX

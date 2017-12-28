@@ -22,7 +22,7 @@ console.log('defaultAccount',defaultAccount);
 const abiArray = require('./divx.js')
 const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
-const thisAirdropTotal = 1000; // amount of tokens allocated for airdrop distribution
+const thisAirdropTotal = 3000000000000000000000; // amount of tokens allocated for airdrop distribution
 
 // keys
 const keys = require('./keys.js');
@@ -78,7 +78,7 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
             // value of tx
             value: web3.toHex(0),
             // gas price
-            gasPrice: web3.toHex(20000000000),
+            gasPrice: web3.toHex(21000000000),
             // gas limit
             gasLimit: web3.toHex(100000),
             // optional data - later will be used for function call from contract to transfer DIVX
