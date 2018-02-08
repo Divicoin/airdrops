@@ -16,7 +16,7 @@ if (typeof web3 !== 'undefined') {
     // eth network to send on (currently ropsten testnet)
     web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
 };
-const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
+const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[1];
 console.log('defaultAccount',defaultAccount);
 // let count = web3.eth.getTransactionCount(defaultAccount);
 const abiArray = require('./divx.js')

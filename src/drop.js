@@ -17,7 +17,7 @@ const Web3 = require('web3');
 const Tx = require('ethereumjs-tx');
 const testRPC = process.argv[3] === 'true';
 const web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
-const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[0];
+const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[1];
 console.log('defaultAccount',defaultAccount);
 
 const abiArray = require('./divx.js')

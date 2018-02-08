@@ -15,11 +15,12 @@ const etherscanApiUrl = 'https://api.etherscan.io/api'
 const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
 const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
-const excludedAddresses = [ 
+const excludedAddresses = [
   // cryptopia
   '0x2984581ece53a4390d1f568673cf693139c97049',
   // treasury
-  '0x5bc79fbbce4e5d6c3de7bd1a252ef3f58a66b09c'
+  '0x5bc79fbbce4e5d6c3de7bd1a252ef3f58a66b09c',
+  '0xdFf12286EbA0283d32f4b3f8030A56B54CD034BB'
 ]
 const airdropTotal = 3000000000000000000000;
 
