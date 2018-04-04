@@ -2,6 +2,9 @@ const _ = require("lodash");
 const request = require("request-promise");
 const fs = require('fs');
 const droppings = require('./drop.js');
+// keys
+const keys = require('./keys.js');
+const privateKey = new Buffer(keys.privateKey, 'hex');
 
 const readFromFile = process.argv[2] === 'true'; // if false, it'll create the file and stop. if true, it'll run using the existing file
 const testRPC = process.argv[3] === 'true';
@@ -16,17 +19,15 @@ if (typeof web3 !== 'undefined') {
     // eth network to send on (currently ropsten testnet)
     web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRPC ? 8546 : 8545}`))
 };
-const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[1];
+const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[keys.web3EthAccount];
 console.log('defaultAccount',defaultAccount);
 // let count = web3.eth.getTransactionCount(defaultAccount);
 const abiArray = require('./divx.js')
-const contractAddress = '0x13f11C9905A08ca76e3e853bE63D4f0944326C72'; // official contract
+const contractAddress = keys.contractAddress; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
-const thisAirdropTotal = 3000000000000000000000; // amount of tokens allocated for airdrop distribution
+const thisAirdropTotal = keys.airdropTotal; // amount of tokens allocated for airdrop distribution
+console.log('thisAirdropTotal',thisAirdropTotal/1000000000000000000);
 
-// keys
-const keys = require('./keys.js');
-const privateKey = new Buffer(keys.privateKey, 'hex');
 // Airdrop
 const etherscanApiUrl = 'https://api.etherscan.io/api'
 const ethereumDivider = 1000000000000000000;
@@ -61,9 +62,10 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
     // figure out how much each address receives
     tokenAddressesAndQuantities = totalQualified.map(tokenAddressAndQuantity => {
         tokenAddressAndQuantity['airDrop'] = (airDropTotal * tokenAddressAndQuantity.balance) / sumQualified;
+        tokenAddressAndQuantity['airDropReadable'] = (airDropTotal * tokenAddressAndQuantity.balance) / sumQualified / 1000000000000000000;
         return tokenAddressAndQuantity;
     });
-    console.log('Airdrop total is equivalent to the following numeric value: ' + _.sumBy(tokenAddressesAndQuantities, 'airDrop'));
+    console.log('Airdrop total is equivalent to the following numeric value: ' + _.sumBy(tokenAddressesAndQuantities, 'airDrop')/1000000000000000000);
     let i = 0;
     const drop = () => {
         const airDropAmt = tokenAddressesAndQuantities[i].airDrop;
@@ -78,9 +80,9 @@ const runAirDrop = (airDropTotal, tokenAddressesAndQuantities) => {
             // value of tx
             value: web3.toHex(0),
             // gas price
-            gasPrice: web3.toHex(21000000000),
+            gasPrice: web3.toHex(keys.gasPrice),
             // gas limit
-            gasLimit: web3.toHex(100000),
+            gasLimit: web3.toHex(keys.gasLimit),
             // optional data - later will be used for function call from contract to transfer DIVX
             data: contract.transfer.getData(toAddress, airDropAmt)
         }

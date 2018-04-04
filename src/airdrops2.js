@@ -9,23 +9,6 @@ const fs = require('fs');
 const readFromFile = process.argv[2] === 'true';
 const testRpc = process.argv[3] === 'true';
 
-console.log('readFromFile',readFromFile);
-
-const etherscanApiUrl = 'https://api.etherscan.io/api'
-const contractAddress = '0x13f11c9905a08ca76e3e853be63d4f0944326c72';
-const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
-const excludedAddresses = [
-  // cryptopia
-  '0x2984581ece53a4390d1f568673cf693139c97049',
-  // treasury
-  '0x5bc79fbbce4e5d6c3de7bd1a252ef3f58a66b09c',
-  '0xdFf12286EbA0283d32f4b3f8030A56B54CD034BB'
-]
-const airdropTotal = 3000000000000000000000;
-
-const erc20Abi = require('./divx.js');
-
 if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider)
 } else {
@@ -34,6 +17,19 @@ if (typeof web3 !== 'undefined') {
 };
 web3.utils = utils;
 
+
+console.log('readFromFile and drop:',readFromFile);
+console.log('current eth balance:', web3.utils.fromWei(web3.eth.getBalance(web3.eth.accounts[keys.web3EthAccount]).toString(),"ether"));
+console.log('current gas price set to:', keys.gasPrice/1000000000, 'gwei');
+
+const etherscanApiUrl = 'https://api.etherscan.io/api'
+const contractAddress = keys.contractAddress;
+const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
+const excludedAddresses = keys.excludedAddresses;
+const airdropTotal = keys.airdropTotal;
+
+const erc20Abi = require('./divx.js');
 const transferFilterOptions = {
   fromBlock: 0,
   toBlock: 'latest',
@@ -100,8 +96,13 @@ transferFilter.get((err, transferLogs) => {
   }
 })
 
-const getBalance = (contractAddress, accountAddress, callback) => {
+const getBalance = (contractAddress, accountAddress, callback, dontAddToAddressesAndBalances) => {
   const simpleAccountAddress = accountAddress.substring(2);
+    if (!dontAddToAddressesAndBalances) {
+        dontAddToAddressesAndBalances = false;
+    } else {
+        dontAddToAddressesAndBalances = true;
+    }
 
   const balanceOfTopic = ('0x70a08231000000000000000000000000' + simpleAccountAddress);
   web3.eth.call({
@@ -110,16 +111,20 @@ const getBalance = (contractAddress, accountAddress, callback) => {
   }, function (err, result) {
     if (result) {
       const tokens = web3.utils.toBN(result).toString();
-      addressesAndBalancesArray.push({
-        address: accountAddress,
-        balance: Number(web3.utils.fromWei(tokens, 'ether'))
-      });
+        if (!dontAddToAddressesAndBalances){
+          addressesAndBalancesArray.push({
+            address: accountAddress,
+            balance: Number(web3.utils.fromWei(tokens, 'ether'))
+          });
+        }
       callback(web3.utils.fromWei(tokens, 'ether'));
     } else {
       console.log('err',err);
     }
   })
 }
+
+getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(divxAmount) => console.log('divx in account:',divxAmount),true );
 
 // gets the balance of all token holders ... answers the question of ... how to find all erc20 token holder balances using web3 and geth
 const getBalances = (contractAddress, accountAddressesArray) => {

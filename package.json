@@ -4,7 +4,8 @@
   "description": "divi airdrops",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "backupLogs": "cp src/tokenAddressesAndQuantities src/logs/tokenAddressesAndQuantities.backup.$(date +%F_%R) && cp src/addressesAndBalancesArray src/logs/addressesAndBalancesArray.backup$(date +%F_%R) && echo '[]' > src/tokenAddressesAndQuantities && echo '[]' > src/addressesAndBalancesArray"
   },
   "repository": {
     "type": "git",
