@@ -1,4 +1,3 @@
-// const request = require("request-promise")
 const _ = require("lodash");
 const keys = require('./keys.js');
 const Web3 = require('web3');
@@ -7,13 +6,11 @@ const runAirDrop = require('./app.js');
 const fs = require('fs');
 
 const readFromFile = process.argv[2] === 'true';
-const testRpc = process.argv[3] === 'true';
 
 if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider)
 } else {
-  // eth network to send on (currently ropsten testnet)
-  web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:${testRpc ? 8546 : 8545}`))
+  web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:8545`))
 };
 web3.utils = utils;
 
@@ -22,14 +19,12 @@ console.log('readFromFile and drop:',readFromFile);
 console.log('current eth balance:', web3.utils.fromWei(web3.eth.getBalance(web3.eth.accounts[keys.web3EthAccount]).toString(),"ether"));
 console.log('current gas price set to:', keys.gasPrice/1000000000, 'gwei');
 
-const etherscanApiUrl = 'https://api.etherscan.io/api'
 const contractAddress = keys.contractAddress;
 const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
 const excludedAddresses = keys.excludedAddresses;
 const airdropTotal = keys.airdropTotal;
 
-const erc20Abi = require('./divx.js');
 const transferFilterOptions = {
   fromBlock: 0,
   toBlock: 'latest',
@@ -124,7 +119,8 @@ const getBalance = (contractAddress, accountAddress, callback, dontAddToAddresse
   })
 }
 
-getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(divxAmount) => console.log('divx in account:',divxAmount),true );
+// log the current token balance
+getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(tokenAmount) => console.log('tokens in account:',tokenAmount),true );
 
 // gets the balance of all token holders ... answers the question of ... how to find all erc20 token holder balances using web3 and geth
 const getBalances = (contractAddress, accountAddressesArray) => {
@@ -134,7 +130,7 @@ const getBalances = (contractAddress, accountAddressesArray) => {
   const filteredAccountAddressesArray = _.pull(accountAddressesArray, ...excludedAddresses);
   // const filteredAccountAddressesArray = accountAddressesArray; // use this to check that all tranasactions add up
   console.log('filteredAccountAddressesArray.length (excludedAddresses array removed)',filteredAccountAddressesArray.length);
-  const recursiveCaller = (result) => {
+  const recursiveCaller = () => {
     if (counter < filteredAccountAddressesArray.length - 1) {
       counter++;
     } else {
@@ -144,16 +140,6 @@ const getBalances = (contractAddress, accountAddressesArray) => {
       runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
-    // if (result) {
-    //   // if (Number(result) > 0) {
-    //   //   addressesAndBalancesArray.push({
-    //   //     address: filteredAccountAddressesArray[counter],
-    //   //     balance: Number(result)
-    //   //   });
-    //   // }
-    // } else if (counter > 0) {
-    //   console.log("error: no result was returned");
-    // }
     getBalance(contractAddress, filteredAccountAddressesArray[counter], recursiveCaller)
   }
   return recursiveCaller();
