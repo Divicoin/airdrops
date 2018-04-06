@@ -58,7 +58,7 @@ typings/
 .env
 
 keys.js
-divx.js
+abiArray.js
 bundle.js
 .DS_Store
 keys.old.js
