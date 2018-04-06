@@ -58,5 +58,11 @@ typings/
 .env
 
 keys.js
-divx.js
+abiArray.js
 bundle.js
+.DS_Store
+keys.old.js
+tokenAddressesAndQuantities-saved*
+tokenAddressesAndQuantities-saved*
+addressesAndBalancesArray-saved*
+.DS_Store
