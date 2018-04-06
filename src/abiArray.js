@@ -10,7 +10,7 @@ module.exports = [
 
         "outputs": [],
 
-        "payable": false,
+      "payable": false,
 
         "type": "function"
 

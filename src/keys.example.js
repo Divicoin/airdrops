@@ -8,7 +8,7 @@ module.exports = {
   "web3EthAccount": 4,
   "contractAddress": '', // erc20
   "excludedAddresses":
-    [
-      '0x3342kjdfksjfk',
-    ]
+      [
+        '0x3342kjdfksjfk',
+      ]
 };

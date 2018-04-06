@@ -60,7 +60,7 @@ const droppings = (tokenAddressesAndQuantities) => {
           i++;
           drop();
         } else {
-            console.log("Airdrop is complete! dont forget ---> npm run backupLogs");
+          console.log("Airdrop is complete! dont forget ---> npm run backupLogs");
         }
       } else {
         console.log("there is an error");

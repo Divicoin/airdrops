@@ -30,7 +30,7 @@ const transferFilterOptions = {
   toBlock: 'latest',
   address: contractAddress,
   topics: [
-      transferTopic,
+    transferTopic,
   ]
 }
 const createTokenFilterOptions = {
@@ -38,7 +38,7 @@ const createTokenFilterOptions = {
   toBlock: 'latest',
   address: contractAddress,
   topics: [
-     createTokenTopic
+    createTokenTopic
   ]
 }
 
@@ -93,11 +93,11 @@ transferFilter.get((err, transferLogs) => {
 
 const getBalance = (contractAddress, accountAddress, callback, dontAddToAddressesAndBalances) => {
   const simpleAccountAddress = accountAddress.substring(2);
-    if (!dontAddToAddressesAndBalances) {
-        dontAddToAddressesAndBalances = false;
-    } else {
-        dontAddToAddressesAndBalances = true;
-    }
+  if (!dontAddToAddressesAndBalances) {
+    dontAddToAddressesAndBalances = false;
+  } else {
+    dontAddToAddressesAndBalances = true;
+  }
 
   const balanceOfTopic = ('0x70a08231000000000000000000000000' + simpleAccountAddress);
   web3.eth.call({
@@ -106,12 +106,12 @@ const getBalance = (contractAddress, accountAddress, callback, dontAddToAddresse
   }, function (err, result) {
     if (result) {
       const tokens = web3.utils.toBN(result).toString();
-        if (!dontAddToAddressesAndBalances){
-          addressesAndBalancesArray.push({
-            address: accountAddress,
-            balance: Number(web3.utils.fromWei(tokens, 'ether'))
-          });
-        }
+      if (!dontAddToAddressesAndBalances){
+        addressesAndBalancesArray.push({
+          address: accountAddress,
+          balance: Number(web3.utils.fromWei(tokens, 'ether'))
+        });
+      }
       callback(web3.utils.fromWei(tokens, 'ether'));
     } else {
       console.log('err',err);
