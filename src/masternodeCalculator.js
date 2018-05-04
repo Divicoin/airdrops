@@ -36,6 +36,7 @@ const masternodeCalculator = (addressesAndBalancesArray) => {
       copper++;
     }
   })
+  console.log(Date());
   console.log('copper',copper);
   console.log('silver',silver);
   console.log('gold',gold);
