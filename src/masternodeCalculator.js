@@ -22,20 +22,31 @@ const masternodeCalculator = (addressesAndBalancesArray) => {
   const diamondAmount = 100000;
   const diamondBonus = 20; // percent
   let diamond = 0;
-  _.each(addressesAndBalancesArray, (addressAndBalance) => {
-    const b = addressAndBalance.balance;
-    if (b >= diamondAmount) {
-      diamond++;
-    } else if (b >= platinumAmount) {
-      platinum++;
-    } else if (b >= goldAmount) {
-      gold++;
-    } else if (b >= silverAmount) {
-      silver++;
-    } else if (b >= copperAmount) {
-      copper++;
+  let borken = 0;
+    if (addressesAndBalancesArray.length > 0) {
+      _.each(addressesAndBalancesArray, (addressAndBalance) => {
+        const b = addressAndBalance.balance;
+        if (b >= diamondAmount) {
+          diamond++;
+        } else if (b >= platinumAmount) {
+          platinum++;
+        } else if (b >= goldAmount) {
+          gold++;
+        } else if (b >= silverAmount) {
+          silver++;
+        } else if (b >= copperAmount) {
+          copper++;
+        }
+      })
+    } else {
+        // the node is down and calculator is not working so these are defaults
+        borken = 1;
+        copper = 428;
+        silver = 183;
+        gold = 80;
+        platinum = 28;
+        diamond = 8;
     }
-  })
   console.log(Date());
   console.log('copper',copper);
   console.log('silver',silver);
@@ -88,6 +99,10 @@ _.each(cells, function(cell, count){
         cell.value = diamond;
     }else if (count ===6) {
         cell.value = dateFormat(new Date(), "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    }else if (count ===8) {
+        if (borken) {
+            cell.value = 'calculator seems to be borken. values shown are just defaults'
+        }
     }
 //      cell.value = '=A1+B2'
       cell.save(); //async
