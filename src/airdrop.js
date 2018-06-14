@@ -23,6 +23,7 @@ const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65
 const excludedAddresses = keys.excludedAddresses;
 const airdropTotal = keys.airdropTotal;
 const blockHeight = web3.eth.blockNumber;
+const chunkSize = 100000;
 
 const transferFilterOptions = {
   fromBlock: 0,
@@ -47,15 +48,15 @@ const getLogs = (filterOptions) => {
   let allLogs = [];
   function iterate(i) {
     if (typeof i !== 'number') i = 0;
-    if (i >= Math.ceil(blockHeight / 1000000) * 1000000) {
+    if (i >= Math.ceil(blockHeight / chunkSize) * chunkSize) {
     } else {
       filterOptions.fromBlock = i;
-      filterOptions.toBlock = i + 1000000;
+      filterOptions.toBlock = i + chunkSize;
       if (filterOptions.toBlock > blockHeight) filterOptions.toBlock = blockHeight;
       web3.eth.filter(filterOptions).get(function (err, logsChunk) {
         if (!err) {
           allLogs = allLogs.concat(logsChunk);
-          i += 1000000;
+          i += chunkSize;
           iterate(i)
         } else {
           console.log('getLogs err:',err);
