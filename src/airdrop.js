@@ -151,7 +151,11 @@ const getBalances = (contractAddress, accountAddressesArray) => {
     } else {
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
-      fs.writeFileSync('./addressesAndBalancesArray', JSON.stringify(addressesAndBalancesArray,null, 2));
+      if (readFromFile) {
+        addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
+      } else {
+        fs.writeFileSync('./addressesAndBalancesArray', JSON.stringify(addressesAndBalancesArray, null, 2));
+      }
       runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
@@ -163,4 +167,4 @@ const getBalances = (contractAddress, accountAddressesArray) => {
 // log the current token balance
 getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(tokenAmount) => console.log('tokens in account:',tokenAmount),true );
 
-getBalances(contractAddress, getAllUniqueAddresses(()=>console.log('addresses.length in callback:',addresses.length)));
+getAllUniqueAddresses((addresses)=>{getBalances(contractAddress,addresses)});
