@@ -6,6 +6,7 @@ const runAirDrop = require('./app.js');
 const fs = require('fs');
 
 const readFromFile = process.argv[2] === 'true';
+console.log('readFromFile and drop:',readFromFile);
 
 if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider)
