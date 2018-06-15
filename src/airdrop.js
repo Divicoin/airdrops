@@ -6,16 +6,15 @@ const runAirDrop = require('./app.js');
 const fs = require('fs');
 
 const readFromFile = process.argv[2] === 'true';
+console.log('readFromFile and drop:',readFromFile);
 
 if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider)
 } else {
   web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:8545`))
-};
+}
 web3.utils = utils;
 
-
-console.log('readFromFile and drop:',readFromFile);
 console.log('current eth balance:', web3.utils.fromWei(web3.eth.getBalance(web3.eth.accounts[keys.web3EthAccount]).toString(),"ether"));
 console.log('current gas price set to:', keys.gasPrice/1000000000, 'gwei');
 
@@ -24,6 +23,8 @@ const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4
 const createTokenTopic = '0x39c7a3761d246197818c5f6f70be88d6f756947e153ba4fbcc65d86cb099f1d7';
 const excludedAddresses = keys.excludedAddresses;
 const airdropTotal = keys.airdropTotal;
+const blockHeight = web3.eth.blockNumber;
+const chunkSize = 100000;
 
 const transferFilterOptions = {
   fromBlock: 0,
@@ -42,54 +43,71 @@ const createTokenFilterOptions = {
   ]
 }
 
-const transferFilter = web3.eth.filter(transferFilterOptions);
-const createTokenFilter= web3.eth.filter(createTokenFilterOptions)
 let addressesAndBalancesArray;
 
-// gets all the erc20 token holders for any token balance
-transferFilter.get((err, transferLogs) => {
-  if (!err) {
-    if (readFromFile) {
-      addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
-      if (addressesAndBalancesArray) {
-        runAirDrop(airdropTotal, addressesAndBalancesArray);
-        return;
-      }
+const getLogs = (filterOptions, callback) => {
+  let allLogs = [];
+  function iterate(i) {
+    if (typeof i !== 'number') i = 0;
+    if (i >= Math.ceil(blockHeight / chunkSize) * chunkSize) {
+      callback(allLogs);
+    } else {
+      filterOptions.fromBlock = i;
+      filterOptions.toBlock = i + chunkSize;
+      if (filterOptions.toBlock > blockHeight) filterOptions.toBlock = blockHeight;
+      web3.eth.filter(filterOptions).get(function (err, logsChunk) {
+        if (!err) {
+          allLogs = allLogs.concat(logsChunk);
+          i += chunkSize;
+          iterate(i)
+        } else {
+          console.log('getLogs err:',err);
+        }
+      })
     }
-    console.log('transferLogs.length',transferLogs.length);
+  }
+  iterate();
+}
 
-    const transferAddresses = [];
+const getUniqueTransferAddresses = function(callback) {
+  getLogs(transferFilterOptions, (transferLogs) => {
+     const transferAddresses = [];
     _.each(transferLogs, (transferLog) => {
       const address1 = '0x' + (transferLog.topics[1]).slice(26, 500) // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
       const address2 = '0x' + (transferLog.topics[2]).slice(26, 500) // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
       transferAddresses.push(address1);
       transferAddresses.push(address2);
     });
+    console.log('transferAddresses.length',transferAddresses.length);
+    callback(_.uniq(transferAddresses));
+  });
 
-    const uniqueTransferAddresses = _.uniq(transferAddresses);
-    console.log('uniqueTransferAddresses.length',uniqueTransferAddresses.length);
-    createTokenFilter.get((err, createTokenLogs) => {
-      if (!err) {
-        createTokenAddresses = _.map(createTokenLogs, createTokenLog => {
-          const address = '0x' + (createTokenLog.topics[1]).slice(26, 500) // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
-          return address;
-        })
-        console.log('createTokenAddresses.length',createTokenAddresses.length);
-        const uniqueCreateTokenAddresses = _.uniq(createTokenAddresses);
-        console.log('uniqueCreateTokenAddresses.length',uniqueCreateTokenAddresses.length);
-        const allAddresses = _.concat(uniqueCreateTokenAddresses, uniqueTransferAddresses);
-        console.log('allAddresses.length',allAddresses.length);
-        const uniqueAllAddresses = _.uniq(allAddresses);
-        console.log('uniqueAllAddresses.length',uniqueAllAddresses.length);
-        getBalances(contractAddress, uniqueAllAddresses);
-      } else {
-        console.log('get createTokenLogs err',err);
-      }
+}
+
+const getUniqueCreateTokenAddresses = function(callback) {
+  getLogs(createTokenFilterOptions, (createTokenLogs) => {
+    let createTokenAddresses = _.map(createTokenLogs, createTokenLog => {
+      return '0x' + (createTokenLog.topics[1]).slice(26, 500); // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
     })
-  } else {
-    console.log('get transfer logs err',err);
-  }
-})
+    console.log('createTokenAddresses.length',createTokenAddresses.length);
+    callback(_.uniq(createTokenAddresses));
+  })
+}
+
+const getAllUniqueAddresses = function(callback) {
+  getUniqueCreateTokenAddresses((uniqueCreateTokenAddresses) => {
+    getUniqueTransferAddresses((uniqueTransferAddresses) => {
+      const allAddresses = _.concat(uniqueCreateTokenAddresses,uniqueTransferAddresses)
+      const uniqueAllAddresses = _.uniq(allAddresses);
+      console.log('uniqueCreateTokenAddresses.length',uniqueCreateTokenAddresses.length);
+      console.log('uniqueTransferAddresses.length',uniqueTransferAddresses.length);
+      console.log('allAddresses.length',allAddresses.length);
+      console.log('uniqueAllAddresses.length',uniqueAllAddresses.length);
+      callback(uniqueAllAddresses);
+    })
+  })
+}
+
 
 const getBalance = (contractAddress, accountAddress, callback, dontAddToAddressesAndBalances) => {
   const simpleAccountAddress = accountAddress.substring(2);
@@ -119,8 +137,6 @@ const getBalance = (contractAddress, accountAddress, callback, dontAddToAddresse
   })
 }
 
-// log the current token balance
-getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(tokenAmount) => console.log('tokens in account:',tokenAmount),true );
 
 // gets the balance of all token holders ... answers the question of ... how to find all erc20 token holder balances using web3 and geth
 const getBalances = (contractAddress, accountAddressesArray) => {
@@ -136,7 +152,11 @@ const getBalances = (contractAddress, accountAddressesArray) => {
     } else {
       console.log('addressesAndBalancesArray.length',addressesAndBalancesArray.length);
       console.log('_.sumBy(addressesAndBalancesArray, balance);',_.sumBy(addressesAndBalancesArray, 'balance'));
-      fs.writeFileSync('./addressesAndBalancesArray', JSON.stringify(addressesAndBalancesArray,null, 2));
+      if (readFromFile) {
+        addressesAndBalancesArray = JSON.parse(fs.readFileSync('./addressesAndBalancesArray'));
+      } else {
+        fs.writeFileSync('./addressesAndBalancesArray', JSON.stringify(addressesAndBalancesArray, null, 2));
+      }
       runAirDrop(airdropTotal, addressesAndBalancesArray);
       return addressesAndBalancesArray;
     }
@@ -144,3 +164,8 @@ const getBalances = (contractAddress, accountAddressesArray) => {
   }
   return recursiveCaller();
 }
+
+// log the current token balance
+getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(tokenAmount) => console.log('tokens in account:',tokenAmount),true );
+
+getAllUniqueAddresses((addresses)=>{getBalances(contractAddress,addresses)});

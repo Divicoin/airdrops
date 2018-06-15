@@ -16,7 +16,6 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider(`http://localhost:8545`))
 };
 const defaultAccount = web3.eth.defaultAccount = web3.eth.accounts[keys.web3EthAccount];
-console.log('defaultAccount',defaultAccount);
 const abiArray = require('./abiArray.js')
 const contractAddress = keys.contractAddress; // official contract
 const contract = web3.eth.contract(abiArray).at(contractAddress);
