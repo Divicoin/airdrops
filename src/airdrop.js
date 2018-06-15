@@ -44,11 +44,12 @@ const createTokenFilterOptions = {
 
 let addressesAndBalancesArray;
 
-const getLogs = (filterOptions) => {
+const getLogs = (filterOptions, callback) => {
   let allLogs = [];
   function iterate(i) {
     if (typeof i !== 'number') i = 0;
     if (i >= Math.ceil(blockHeight / chunkSize) * chunkSize) {
+      callback(allLogs);
     } else {
       filterOptions.fromBlock = i;
       filterOptions.toBlock = i + chunkSize;
@@ -65,41 +66,45 @@ const getLogs = (filterOptions) => {
     }
   }
   iterate();
-  return allLogs;
 }
 
-const getUniqueTransferAddresses = function() {
-  const transferLogs = getLogs(transferFilterOptions);
-  const transferAddresses = [];
-  _.each(transferLogs, (transferLog) => {
+const getUniqueTransferAddresses = function(callback) {
+  getLogs(transferFilterOptions, (transferLogs) => {
+     const transferAddresses = [];
+    _.each(transferLogs, (transferLog) => {
       const address1 = '0x' + (transferLog.topics[1]).slice(26, 500) // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
       const address2 = '0x' + (transferLog.topics[2]).slice(26, 500) // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
       transferAddresses.push(address1);
       transferAddresses.push(address2);
     });
-  console.log('transferAddresses.length',transferAddresses.length);
-  return _.uniq(transferAddresses);
+    console.log('transferAddresses.length',transferAddresses.length);
+    callback(_.uniq(transferAddresses));
+  });
+
 }
 
-const getUniqueCreateTokenAddresses = function() {
-  const createTokenLogs = getLogs(createTokenFilterOptions)
-  let createTokenAddresses = _.map(createTokenLogs, createTokenLog => {
-    return '0x' + (createTokenLog.topics[1]).slice(26, 500); // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
+const getUniqueCreateTokenAddresses = function(callback) {
+  getLogs(createTokenFilterOptions, (createTokenLogs) => {
+    let createTokenAddresses = _.map(createTokenLogs, createTokenLog => {
+      return '0x' + (createTokenLog.topics[1]).slice(26, 500); // have to slice out all the extra zeros to extract the address, which looks like this: 0x0000000000000000000000008b2f96cec0849c6226cf5cfaf32044c12b16eed9//
+    })
+    console.log('createTokenAddresses.length',createTokenAddresses.length);
+    callback(_.uniq(createTokenAddresses));
   })
-  console.log('createTokenAddresses.length',createTokenAddresses.length);
-  return _.uniq(createTokenAddresses);
 }
 
-const getAllUniqueAddresses = function() {
-  const uniqueCreateTokenAddreses = getUniqueCreateTokenAddresses();
-  const uniqueTransferAddresses = getUniqueTransferAddresses();
-  const allAddresses = _.concat(uniqueCreateTokenAddreses,uniqueTransferAddresses)
-  const uniqueAllAddresses = _.uniq(allAddresses);
-  console.log('uniqueCreateTokenAddreses.length',uniqueCreateTokenAddreses.length);
-  console.log('uniqueTransferAddresses.length',uniqueTransferAddresses.length);
-  console.log('allAddresses.length',allAddresses.length);
-  console.log('uniqueAllAddresses.length',uniqueAllAddresses.length);
-  return uniqueAllAddresses;
+const getAllUniqueAddresses = function(callback) {
+  getUniqueCreateTokenAddresses((uniqueCreateTokenAddresses) => {
+    getUniqueTransferAddresses((uniqueTransferAddresses) => {
+      const allAddresses = _.concat(uniqueCreateTokenAddresses,uniqueTransferAddresses)
+      const uniqueAllAddresses = _.uniq(allAddresses);
+      console.log('uniqueCreateTokenAddresses.length',uniqueCreateTokenAddresses.length);
+      console.log('uniqueTransferAddresses.length',uniqueTransferAddresses.length);
+      console.log('allAddresses.length',allAddresses.length);
+      console.log('uniqueAllAddresses.length',uniqueAllAddresses.length);
+      callback(uniqueAllAddresses);
+    })
+  })
 }
 
 
@@ -158,4 +163,4 @@ const getBalances = (contractAddress, accountAddressesArray) => {
 // log the current token balance
 getBalance(keys.contractAddress,web3.eth.accounts[keys.web3EthAccount],(tokenAmount) => console.log('tokens in account:',tokenAmount),true );
 
-getBalances(contractAddress, getAllUniqueAddresses());
+getBalances(contractAddress, getAllUniqueAddresses(()=>console.log('addresses.length in callback:',addresses.length)));
